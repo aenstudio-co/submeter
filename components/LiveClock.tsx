@@ -52,5 +52,5 @@ export function DaysLeft({ dueDate }: { dueDate: string }) {
 
   const text =
     left > 1 ? `${left} days left` : left === 1 ? "tomorrow" : left === 0 ? "today" : `${-left} days ago`;
-  return <span className="text-white/70">({text})</span>;
+  return <span className="text-mute">({text})</span>;
 }
