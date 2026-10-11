@@ -7,6 +7,18 @@ export const isClosed = (e: Entry): e is ClosedEntry => e.end_at !== null && e.e
 // How far the meter moved during this entry (not split with anyone).
 export const entryKwh = (e: ClosedEntry) => round2(e.end_reading - e.start_reading);
 
+// One stretch of time between two meter readings, and who was in the room.
+export type Segment = {
+  fromCycleStart: boolean;
+  fromAt: string;
+  toAt: string;
+  fromReading: number;
+  toReading: number;
+  kwh: number;
+  people: Person[];
+  problem: boolean; // the reading went down
+};
+
 export function summarize(entries: Entry[], s: Settings) {
   const timedIn = entries.filter((e) => !isClosed(e));
   const byId = new Map(entries.map((e) => [e.id, e]));
@@ -24,13 +36,35 @@ export function summarize(entries: Entry[], s: Settings) {
     return a.reading - b.reading;
   });
 
-  // Walk the timeline. The kWh the meter used between two points is split equally
-  // between everyone who was in the room during that time.
   const raw = new Map<string, number>();
   const together = new Map<string, Set<Person>>();
+  const alone = new Map<Person, number>();
+  const shared = new Map<Person, number>();
+  const withPeople = new Map<Person, Set<Person>>();
+  const segments: Segment[] = [];
   const active = new Set<string>();
   let inconsistent = false;
 
+  // From the previous bill's reading to the first logged reading, nobody was timed in.
+  if (events.length) {
+    const first = events[0].reading - s.previous_reading;
+    if (Math.abs(first) >= 0.005) {
+      segments.push({
+        fromCycleStart: true,
+        fromAt: `${s.cycle_start}T00:00:00`,
+        toAt: events[0].at,
+        fromReading: s.previous_reading,
+        toReading: events[0].reading,
+        kwh: round2(first),
+        people: [],
+        problem: first < -0.005,
+      });
+      if (first < -0.005) inconsistent = true;
+    }
+  }
+
+  // Walk the timeline. The kWh the meter used between two points is split equally
+  // between everyone who was in the room during that time.
   events.forEach((ev, i) => {
     if (ev.kind === "start") active.add(ev.entryId);
     else active.delete(ev.entryId);
@@ -39,6 +73,18 @@ export function summarize(entries: Entry[], s: Settings) {
     if (!next) return;
 
     const delta = next.reading - ev.reading;
+    if (Math.abs(delta) >= 0.005) {
+      segments.push({
+        fromCycleStart: false,
+        fromAt: ev.at,
+        toAt: next.at,
+        fromReading: ev.reading,
+        toReading: next.reading,
+        kwh: round2(delta),
+        people: [...new Set([...active].map((id) => byId.get(id)!.person))],
+        problem: delta < -0.005,
+      });
+    }
     if (delta < -0.005) {
       inconsistent = true; // a later time has a lower reading
       return;
@@ -47,14 +93,24 @@ export function summarize(entries: Entry[], s: Settings) {
 
     const part = delta / active.size;
     for (const id of active) {
-      raw.set(id, (raw.get(id) ?? 0) + part);
       const me = byId.get(id)!.person;
+      raw.set(id, (raw.get(id) ?? 0) + part);
+
+      const others = new Set<Person>();
       for (const other of active) {
         const them = byId.get(other)!.person;
-        if (them !== me) {
-          if (!together.has(id)) together.set(id, new Set());
-          together.get(id)!.add(them);
-        }
+        if (them !== me) others.add(them);
+      }
+      if (others.size === 0) {
+        alone.set(me, (alone.get(me) ?? 0) + part);
+      } else {
+        shared.set(me, (shared.get(me) ?? 0) + part);
+        if (!together.has(id)) together.set(id, new Set());
+        if (!withPeople.has(me)) withPeople.set(me, new Set());
+        others.forEach((o) => {
+          together.get(id)!.add(o);
+          withPeople.get(me)!.add(o);
+        });
       }
     }
   });
@@ -70,7 +126,14 @@ export function summarize(entries: Entry[], s: Settings) {
     const kwh = round2(
       entries.filter((e) => e.person === person).reduce((sum, e) => sum + (raw.get(e.id) ?? 0), 0)
     );
-    return { person, kwh, bill: round2(kwh * s.rate) };
+    return {
+      person,
+      kwh,
+      bill: round2(kwh * s.rate),
+      alone: round2(alone.get(person) ?? 0),
+      shared: round2(shared.get(person) ?? 0),
+      withPeople: [...(withPeople.get(person) ?? [])],
+    };
   });
 
   // The meter's current reading is the most recent reading anyone logged.
@@ -85,6 +148,7 @@ export function summarize(entries: Entry[], s: Settings) {
     timedIn,
     shareByEntry,
     sharedWith,
+    segments,
     inconsistent,
     current,
     total,

@@ -6,7 +6,7 @@ export type EditValues = { timeIn: string; readingIn: number; timeOut: string; r
 
 // What the screens can do. The real versions live in app/actions.ts and talk to Supabase.
 export type Actions = {
-  login: (name: Person | "", password: string) => Promise<Result>;
+  login: (name: Person | "") => Promise<Result>;
   logout: () => Promise<void>;
   timeIn: (time: string, reading: number) => Promise<Result>;
   timeOut: (id: string, time: string, reading: number) => Promise<Result>;

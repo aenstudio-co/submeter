@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { fmtDateTime, fmtKwh, fmtPhp, isClosed, joinNames, round2, toInputValue } from "@/lib/calc";
 import type { Actions } from "@/lib/store";
+import DateTimeFields from "./DateTimeFields";
 import type { ClosedEntry, Entry, Person } from "@/lib/types";
 
 const rowCols = "sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.2fr)_5.5rem_5rem_6rem]";
@@ -32,22 +33,24 @@ function EditForm({ entry, actions, onDone }: { entry: ClosedEntry; actions: Act
 
   return (
     <form onSubmit={submit} className="grid gap-4 px-4 py-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="grid gap-1 text-sm font-medium">
-          <label htmlFor={`ti-${entry.id}`}>Time in</label>
-          <input id={`ti-${entry.id}`} type="datetime-local" value={timeIn} onChange={(e) => setTimeIn(e.target.value)} required />
+      <div role="group" aria-label="Time in">
+        <p className="mb-2 text-sm font-semibold">Time in</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <DateTimeFields idPrefix={`ti-${entry.id}`} value={timeIn} onChange={setTimeIn} />
+          <div className="grid gap-1 text-sm font-medium">
+            <label htmlFor={`ri-${entry.id}`}>Meter reading (kWh)</label>
+            <input id={`ri-${entry.id}`} type="number" step="0.01" min="0" inputMode="decimal" value={readingIn} onChange={(e) => setReadingIn(e.target.value)} required />
+          </div>
         </div>
-        <div className="grid gap-1 text-sm font-medium">
-          <label htmlFor={`ri-${entry.id}`}>Reading in (kWh)</label>
-          <input id={`ri-${entry.id}`} type="number" step="0.01" min="0" inputMode="decimal" value={readingIn} onChange={(e) => setReadingIn(e.target.value)} required />
-        </div>
-        <div className="grid gap-1 text-sm font-medium">
-          <label htmlFor={`to-${entry.id}`}>Time out</label>
-          <input id={`to-${entry.id}`} type="datetime-local" value={timeOut} onChange={(e) => setTimeOut(e.target.value)} required />
-        </div>
-        <div className="grid gap-1 text-sm font-medium">
-          <label htmlFor={`ro-${entry.id}`}>Reading out (kWh)</label>
-          <input id={`ro-${entry.id}`} type="number" step="0.01" min="0" inputMode="decimal" value={readingOut} onChange={(e) => setReadingOut(e.target.value)} required />
+      </div>
+      <div role="group" aria-label="Time out">
+        <p className="mb-2 text-sm font-semibold">Time out</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <DateTimeFields idPrefix={`to-${entry.id}`} value={timeOut} onChange={setTimeOut} />
+          <div className="grid gap-1 text-sm font-medium">
+            <label htmlFor={`ro-${entry.id}`}>Meter reading (kWh)</label>
+            <input id={`ro-${entry.id}`} type="number" step="0.01" min="0" inputMode="decimal" value={readingOut} onChange={(e) => setReadingOut(e.target.value)} required />
+          </div>
         </div>
       </div>
       {error && (

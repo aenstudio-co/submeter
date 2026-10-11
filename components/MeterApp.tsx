@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { fmtDate, fmtDateTime, fmtKwh, fmtPhp, fmtRate, isClosed, summarize } from "@/lib/calc";
+import { fmtDate, fmtKwh, fmtPhp, fmtRate, isClosed, summarize } from "@/lib/calc";
 import type { Actions } from "@/lib/store";
 import type { Entry, Person, Settings } from "@/lib/types";
 import HistoryList from "./HistoryList";
 import LiveClock, { DaysLeft } from "./LiveClock";
 import SessionTab from "./SessionTab";
+import TotalsTab from "./TotalsTab";
 import UserMenu from "./UserMenu";
 
 type Tab = "session" | "split" | "history";
@@ -69,7 +70,7 @@ export default function MeterApp({
             <dd className="mt-0.5 font-mono">{fmtKwh(sum.current)}</dd>
           </div>
           <div>
-            <dt className="text-sm text-mute">Used</dt>
+            <dt className="text-sm text-mute">Meter used</dt>
             <dd className="mt-0.5 font-mono">{fmtKwh(sum.total)} kWh</dd>
           </div>
         </dl>
@@ -105,67 +106,7 @@ export default function MeterApp({
           />
         )}
 
-        {tab === "split" && (
-          <div>
-            <h2 className="text-xl font-semibold">Totals</h2>
-            <p className="mt-1 text-mute">
-              When two or more people are in the room at the same time, the kWh used in that time is split equally.
-            </p>
-            <div className="mt-4 overflow-hidden rounded-lg border border-line bg-surface">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-line text-sm text-mute">
-                    <th className="px-4 py-2 text-left font-medium">Person</th>
-                    <th className="px-4 py-2 text-right font-medium">Usage</th>
-                    <th className="px-4 py-2 text-right font-medium">Bill</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {sum.perPerson.map((p) => (
-                    <tr key={p.person}>
-                      <td className="px-4 py-3 font-medium">{p.person}</td>
-                      <td className="px-4 py-3 text-right font-mono">{fmtKwh(p.kwh)} kWh</td>
-                      <td className="px-4 py-3 text-right font-mono">{fmtPhp(p.bill)}</td>
-                    </tr>
-                  ))}
-                  {sum.unlogged > 0.005 && (
-                    <tr className="text-mute">
-                      <td className="px-4 py-3">Not logged</td>
-                      <td className="px-4 py-3 text-right font-mono">{fmtKwh(sum.unlogged)} kWh</td>
-                      <td className="px-4 py-3 text-right font-mono">{fmtPhp(sum.unloggedBill)}</td>
-                    </tr>
-                  )}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-line font-semibold">
-                    <td className="px-4 py-3">Total</td>
-                    <td className="px-4 py-3 text-right font-mono">{fmtKwh(sum.total)} kWh</td>
-                    <td className="px-4 py-3 text-right font-mono">{fmtPhp(sum.totalBill)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            {sum.timedIn.length > 0 && (
-              <p className="mt-4 text-mute">
-                Timed in now:{" "}
-                {sum.timedIn.map((e, i) => (
-                  <span key={e.id}>
-                    {i > 0 && ", "}
-                    <span className="font-medium text-ink">{e.person}</span> since {fmtDateTime(e.start_at)}
-                  </span>
-                ))}
-              </p>
-            )}
-
-            {sum.inconsistent && (
-              <p role="alert" className="mt-3 text-sm font-medium text-signal">
-                Some readings don't line up with their times (a later time has a lower reading). Check the History tab
-                for a wrong reading.
-              </p>
-            )}
-          </div>
-        )}
+        {tab === "split" && <TotalsTab sum={sum} settings={settings} />}
 
         {tab === "history" && (
           <HistoryList

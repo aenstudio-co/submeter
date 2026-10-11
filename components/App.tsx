@@ -30,8 +30,8 @@ export default function App({ session }: { session: Session | null }) {
   }, [router, signedIn]);
 
   const actions: Actions = {
-    async login(name, password) {
-      const err = await login(name, password);
+    async login(name) {
+      const err = await login(name);
       if (!err) router.refresh();
       return err;
     },

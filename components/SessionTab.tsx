@@ -4,21 +4,8 @@ import { useEffect, useState } from "react";
 import { fmtDateTime, fmtKwh, fmtPhp, joinNames, previewShare, round2 } from "@/lib/calc";
 import type { Actions } from "@/lib/store";
 import { nowInput } from "@/lib/time";
+import DateTimeFields from "./DateTimeFields";
 import type { Entry, Settings } from "@/lib/types";
-
-function TimeField({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="grid gap-1 text-sm font-medium">
-      <div className="flex items-center justify-between">
-        <label htmlFor={id}>Time</label>
-        <button type="button" onClick={() => onChange(nowInput())} className="font-normal underline underline-offset-4">
-          Use current time
-        </button>
-      </div>
-      <input id={id} type="datetime-local" value={value} onChange={(e) => onChange(e.target.value)} required />
-    </div>
-  );
-}
 
 function ReadingField({
   id,
@@ -74,8 +61,8 @@ function NotTimedIn({ lastReading, actions }: { lastReading: number; actions: Ac
       <p className="mt-1 text-mute">You're not timed in. Enter the time you got in and the reading on the meter.</p>
 
       <form onSubmit={submit} className="mt-4 grid gap-5 rounded-lg border border-line bg-surface p-5 sm:p-6">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TimeField id="time_in" value={time} onChange={setTime} />
+        <div className="grid gap-5 sm:grid-cols-3">
+          <DateTimeFields idPrefix="time_in" value={time} onChange={setTime} />
           <ReadingField
             id="reading_in"
             value={reading}
@@ -147,8 +134,8 @@ function TimedIn({
       <p className="mt-1 text-mute">Enter the time you left and the reading on the meter.</p>
 
       <form onSubmit={submit} className="mt-4 grid gap-5 rounded-lg border border-line bg-surface p-5 sm:p-6">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TimeField id="time_out" value={time} onChange={setTime} />
+        <div className="grid gap-5 sm:grid-cols-3">
+          <DateTimeFields idPrefix="time_out" value={time} onChange={setTime} />
           <ReadingField id="reading_out" value={reading} onChange={setReading} />
         </div>
 

@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createHash, timingSafeEqual } from "node:crypto";
 import { db } from "@/lib/supabase";
 import { createSession, destroySession, getSession } from "@/lib/session";
 import type { EditValues, Result } from "@/lib/store";
@@ -18,12 +17,6 @@ async function currentUser(): Promise<Person | null> {
   }
 }
 
-function safeEqual(a: string, b: string) {
-  const ha = createHash("sha256").update(a).digest();
-  const hb = createHash("sha256").update(b).digest();
-  return timingSafeEqual(ha, hb);
-}
-
 function checkRange(timeIn: string, readingIn: number, timeOut: string, readingOut: number): Result {
   if (!DATETIME.test(timeIn) || !DATETIME.test(timeOut)) return "Enter both times.";
   if (timeOut < timeIn) return "Time out must be after time in.";
@@ -34,16 +27,8 @@ function checkRange(timeIn: string, readingIn: number, timeOut: string, readingO
 
 // ---------- Sign in / out ----------
 
-export async function login(name: Person | "", password: string): Promise<Result> {
+export async function login(name: Person | ""): Promise<Result> {
   if (!name || !(PEOPLE as readonly string[]).includes(name)) return "Choose your name.";
-
-  const expected = process.env[`PASSWORD_${name.toUpperCase()}`];
-  if (!expected) return `No password is set for ${name}. Add PASSWORD_${name.toUpperCase()} to .env.local and restart.`;
-
-  if (!safeEqual(String(password), expected)) {
-    await new Promise((r) => setTimeout(r, 600)); // slows down password guessing
-    return "Wrong password.";
-  }
 
   try {
     await createSession(name);
