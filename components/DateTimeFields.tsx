@@ -1,9 +1,10 @@
 "use client";
 
 import { nowInput } from "@/lib/time";
+import { Field } from "./ui";
 
-// Two separate fields, a date and a time, that together make "YYYY-MM-DDTHH:mm".
-// Put it inside a grid: it renders two cells.
+// A Date field and a Time field, side by side, that together make "YYYY-MM-DDTHH:mm".
+// Put it inside a two-column grid: it renders two cells.
 export default function DateTimeFields({
   idPrefix,
   value,
@@ -17,8 +18,7 @@ export default function DateTimeFields({
 
   return (
     <>
-      <div className="grid gap-1 text-sm font-medium">
-        <label htmlFor={`${idPrefix}-date`}>Date</label>
+      <Field label="Date" htmlFor={`${idPrefix}-date`}>
         <input
           id={`${idPrefix}-date`}
           type="date"
@@ -26,14 +26,16 @@ export default function DateTimeFields({
           onChange={(e) => onChange(`${e.target.value}T${time}`)}
           required
         />
-      </div>
-      <div className="grid gap-1 text-sm font-medium">
-        <div className="flex items-center justify-between">
-          <label htmlFor={`${idPrefix}-time`}>Time</label>
-          <button type="button" onClick={() => onChange(nowInput())} className="font-normal underline underline-offset-4">
+      </Field>
+      <Field
+        label="Time"
+        htmlFor={`${idPrefix}-time`}
+        action={
+          <button type="button" onClick={() => onChange(nowInput())} className="text-[15px] underline underline-offset-2">
             Set to now
           </button>
-        </div>
+        }
+      >
         <input
           id={`${idPrefix}-time`}
           type="time"
@@ -41,7 +43,7 @@ export default function DateTimeFields({
           onChange={(e) => onChange(`${date}T${e.target.value}`)}
           required
         />
-      </div>
+      </Field>
     </>
   );
 }

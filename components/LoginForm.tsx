@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import type { Result } from "@/lib/store";
 import { PEOPLE, type Person } from "@/lib/types";
+import { CheckIcon } from "./icons";
+import { ErrorText, primaryButton } from "./ui";
 
 const LAST_NAME_KEY = "submeter-last-name";
 
@@ -33,53 +35,54 @@ export default function LoginForm({ onLogin }: { onLogin: (name: Person | "") =>
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
-      <h1 className="text-3xl font-semibold tracking-tight">Room sub meter</h1>
-      <p className="mt-1 text-mute">Choose your name to continue.</p>
+    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 pb-14 text-center">
+      <h1 className="text-[32px] font-bold leading-tight">Room sub meter</h1>
+      <p className="mt-2.5 text-lg text-mute">Who's logging today?</p>
 
-      <form onSubmit={submit} className="mt-8 grid gap-5">
+      <form onSubmit={submit} className="mt-9">
         <fieldset>
-          <legend className="sr-only">Who are you?</legend>
-          <div className="grid grid-cols-3 gap-2">
-            {PEOPLE.map((p) => (
-              <label key={p} className="cursor-pointer">
-                <input
-                  type="radio"
-                  name="name"
-                  value={p}
-                  checked={name === p}
-                  onChange={() => {
-                    setName(p);
-                    setError("");
-                  }}
-                  className="peer sr-only"
-                />
-                <span
-                  className={`block rounded-lg border px-3 py-3 text-center font-medium transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-panel peer-focus-visible:ring-offset-2 ${
-                    name === p ? "border-panel bg-panel text-white" : "border-line bg-white hover:border-mute"
+          <legend className="sr-only">Choose your name</legend>
+          <div className="grid gap-3">
+            {PEOPLE.map((p) => {
+              const selected = name === p;
+              return (
+                <label
+                  key={p}
+                  className={`relative flex min-h-[60px] cursor-pointer items-center justify-center gap-2.5 rounded-lg border-2 text-[19px] font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink ${
+                    selected ? "border-ink bg-ink text-surface" : "border-line bg-surface text-ink"
                   }`}
                 >
+                  <input
+                    type="radio"
+                    name="name"
+                    value={p}
+                    checked={selected}
+                    onChange={() => {
+                      setName(p);
+                      setError("");
+                    }}
+                    className="sr-only"
+                  />
+                  {selected && <CheckIcon />}
                   {p}
-                </span>
-              </label>
-            ))}
+                </label>
+              );
+            })}
           </div>
         </fieldset>
 
         {error && (
-          <p role="alert" className="text-sm font-medium text-signal">
-            {error}
-          </p>
+          <div className="mt-4">
+            <ErrorText>{error}</ErrorText>
+          </div>
         )}
 
-        <button
-          type="submit"
-          disabled={!name || pending}
-          className="rounded-lg bg-panel px-5 py-3 font-medium text-white transition-colors hover:bg-ink disabled:opacity-40"
-        >
+        <button type="submit" disabled={!name || pending} className={`mt-6 py-4 text-lg ${primaryButton}`}>
           {pending ? "Continuing…" : "Continue"}
         </button>
       </form>
+
+      <p className="mt-5 text-[15px] text-mute">Your phone remembers your name, so next time you only tap Continue.</p>
     </main>
   );
 }

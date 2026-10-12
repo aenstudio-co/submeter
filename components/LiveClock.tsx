@@ -16,27 +16,25 @@ function useNow() {
 // Ticking date and time in Philippine time.
 export default function LiveClock() {
   const now = useNow();
-  if (!now) return <div className="h-[4.25rem]" aria-hidden="true" />;
+  if (!now) return <p className="h-[1.375rem]" aria-hidden="true" />;
 
+  const date = now.toLocaleDateString("en-US", {
+    timeZone: "Asia/Manila",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
   const time = now.toLocaleTimeString("en-US", {
     timeZone: "Asia/Manila",
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
   });
-  const date = now.toLocaleDateString("en-US", {
-    timeZone: "Asia/Manila",
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
 
   return (
-    <div className="sm:text-right">
-      <p className="font-mono text-2xl font-medium tabular-nums">{time}</p>
-      <p className="text-sm text-mute">{date}</p>
-    </div>
+    <p className="mt-1 text-[15px] tabular-nums text-mute">
+      {date}, <span className="font-semibold text-ink">{time}</span>
+    </p>
   );
 }
 
@@ -52,5 +50,5 @@ export function DaysLeft({ dueDate }: { dueDate: string }) {
 
   const text =
     left > 1 ? `${left} days left` : left === 1 ? "tomorrow" : left === 0 ? "today" : `${-left} days ago`;
-  return <span className="text-mute">({text})</span>;
+  return <span>({text})</span>;
 }

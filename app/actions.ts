@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { db } from "@/lib/supabase";
-import { createSession, destroySession, getSession } from "@/lib/session";
-import type { EditValues, Result } from "@/lib/store";
+import { createAdminSession, createSession, destroyAdminSession, destroySession, getSession, hasAdminSession } from "@/lib/session";
+import type { BillingValues, EditValues, Result } from "@/lib/store";
 import { PEOPLE, type Person } from "@/lib/types";
 
 const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
@@ -127,4 +128,67 @@ export async function deleteEntry(id: string): Promise<void> {
 
   await db().from("entries").delete().eq("id", String(id)).eq("person", user);
   revalidatePath("/");
+}
+
+// ---------- Billing settings (rate, cycle dates), behind an admin password ----------
+
+function safeEqual(a: string, b: string) {
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
+
+export async function unlockSettings(password: string): Promise<Result> {
+  if (!(await currentUser())) return EXPIRED;
+
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected) return "No admin password is set yet. Add ADMIN_PASSWORD to .env.local (and to Vercel), then restart.";
+
+  if (!safeEqual(String(password), expected)) {
+    await new Promise((r) => setTimeout(r, 600)); // slows down password guessing
+    return "Wrong password.";
+  }
+
+  try {
+    await createAdminSession();
+  } catch (e) {
+    return e instanceof Error ? e.message : "Couldn't unlock.";
+  }
+  revalidatePath("/");
+  return null;
+}
+
+export async function lockSettings(): Promise<void> {
+  await destroyAdminSession();
+  revalidatePath("/");
+}
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+export async function saveBilling(v: BillingValues): Promise<Result> {
+  if (!(await currentUser())) return EXPIRED;
+  if (!(await hasAdminSession())) return "Settings are locked. Enter the admin password first.";
+
+  const cycleStart = String(v.cycleStart);
+  const cycleEnd = String(v.cycleEnd);
+  if (!DATE_ONLY.test(cycleStart) || !DATE_ONLY.test(cycleEnd)) return "Enter both dates.";
+  if (cycleEnd <= cycleStart) return "The expected bill date must be after the start date.";
+  if (!Number.isFinite(v.rate) || v.rate <= 0 || v.rate > 1000) return "Enter the rate in pesos per kWh.";
+  if (!Number.isFinite(v.previousReading) || v.previousReading < 0) {
+    return "Enter the meter reading at the start of the cycle.";
+  }
+
+  const { error } = await db()
+    .from("settings")
+    .update({
+      rate: v.rate,
+      previous_reading: v.previousReading,
+      cycle_start: cycleStart,
+      cycle_end: cycleEnd,
+    })
+    .eq("id", 1);
+  if (error) return error.message;
+
+  revalidatePath("/");
+  return null;
 }

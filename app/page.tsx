@@ -1,5 +1,5 @@
 import App from "@/components/App";
-import { getSession } from "@/lib/session";
+import { getSession, hasAdminSession } from "@/lib/session";
 import { db } from "@/lib/supabase";
 import type { Entry, Settings } from "@/lib/types";
 
@@ -70,5 +70,10 @@ export default async function Home() {
     );
   }
 
-  return <App session={{ user, settings: result.settings, entries: result.entries }} />;
+  let admin = false;
+  try {
+    admin = await hasAdminSession();
+  } catch {}
+
+  return <App session={{ user, settings: result.settings, entries: result.entries, admin }} />;
 }

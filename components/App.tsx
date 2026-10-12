@@ -2,13 +2,24 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { cancelTimeIn, deleteEntry, login, logout, timeIn, timeOut, updateEntry } from "@/app/actions";
+import {
+  cancelTimeIn,
+  deleteEntry,
+  lockSettings,
+  login,
+  logout,
+  saveBilling,
+  timeIn,
+  timeOut,
+  unlockSettings,
+  updateEntry,
+} from "@/app/actions";
 import type { Actions } from "@/lib/store";
 import type { Entry, Person, Settings } from "@/lib/types";
 import LoginForm from "./LoginForm";
 import MeterApp from "./MeterApp";
 
-type Session = { user: Person; settings: Settings; entries: Entry[] };
+type Session = { user: Person; settings: Settings; entries: Entry[]; admin: boolean };
 
 export default function App({ session }: { session: Session | null }) {
   const router = useRouter();
@@ -44,8 +55,26 @@ export default function App({ session }: { session: Session | null }) {
     cancelTimeIn,
     updateEntry,
     deleteEntry,
+    async unlockSettings(password) {
+      const err = await unlockSettings(password);
+      if (!err) router.refresh();
+      return err;
+    },
+    async lockSettings() {
+      await lockSettings();
+      router.refresh();
+    },
+    saveBilling,
   };
 
   if (!session) return <LoginForm onLogin={actions.login} />;
-  return <MeterApp user={session.user} settings={session.settings} entries={session.entries} actions={actions} />;
+  return (
+    <MeterApp
+      user={session.user}
+      settings={session.settings}
+      entries={session.entries}
+      admin={session.admin}
+      actions={actions}
+    />
+  );
 }

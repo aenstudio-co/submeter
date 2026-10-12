@@ -4,35 +4,29 @@ import { useEffect, useState } from "react";
 import { fmtDateTime, fmtKwh, fmtPhp, joinNames, previewShare, round2 } from "@/lib/calc";
 import type { Actions } from "@/lib/store";
 import { nowInput } from "@/lib/time";
-import DateTimeFields from "./DateTimeFields";
 import type { Entry, Settings } from "@/lib/types";
+import DateTimeFields from "./DateTimeFields";
+import { ErrorText, Field, Heading, Hint, primaryButton } from "./ui";
 
-function ReadingField({
-  id,
-  value,
-  onChange,
-  hint,
-}: {
-  id: string;
-  value: string;
-  onChange: (v: string) => void;
-  hint?: string;
-}) {
+function ReadingField({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) {
   return (
-    <div className="grid gap-1 text-sm font-medium">
-      <label htmlFor={id}>Meter reading (kWh)</label>
-      <input
-        id={id}
-        type="number"
-        step="0.01"
-        min="0"
-        inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required
-      />
-      {hint && <span className="font-normal text-mute">{hint}</span>}
-    </div>
+    <Field label="Meter reading" htmlFor={id}>
+      <div className="relative">
+        <input
+          id={id}
+          type="number"
+          step="0.01"
+          min="0"
+          inputMode="decimal"
+          placeholder="0.00"
+          className="pr-14 tabular-nums"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required
+        />
+        <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-mute">kWh</span>
+      </div>
+    </Field>
   );
 }
 
@@ -56,36 +50,24 @@ function NotTimedIn({ lastReading, actions }: { lastReading: number; actions: Ac
   }
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold">Time in</h2>
-      <p className="mt-1 text-mute">You're not timed in. Enter the time you got in and the reading on the meter.</p>
+    <section>
+      <Heading>Time in</Heading>
+      <Hint className="mt-1">You're not timed in. Enter when you got in and the reading on the meter.</Hint>
 
-      <form onSubmit={submit} className="mt-4 grid gap-5 rounded-lg border border-line bg-surface p-5 sm:p-6">
-        <div className="grid gap-5 sm:grid-cols-3">
+      <form onSubmit={submit} className="mt-4 grid gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <DateTimeFields idPrefix="time_in" value={time} onChange={setTime} />
-          <ReadingField
-            id="reading_in"
-            value={reading}
-            onChange={setReading}
-            hint={`Last reading logged: ${fmtKwh(lastReading)}`}
-          />
         </div>
-        {error && (
-          <p role="alert" className="text-sm font-medium text-signal">
-            {error}
-          </p>
-        )}
-        <div>
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-md bg-panel px-5 py-2.5 font-medium text-white transition-colors hover:bg-ink disabled:opacity-60"
-          >
-            {pending ? "Saving…" : "Save time in"}
-          </button>
+        <div className="grid gap-1.5">
+          <ReadingField id="reading_in" value={reading} onChange={setReading} />
+          <Hint className="text-sm">Last reading logged: {fmtKwh(lastReading)} kWh</Hint>
         </div>
+        {error && <ErrorText>{error}</ErrorText>}
+        <button type="submit" disabled={pending} className={primaryButton}>
+          {pending ? "Saving…" : "Save time in"}
+        </button>
       </form>
-    </div>
+    </section>
   );
 }
 
@@ -123,80 +105,72 @@ function TimedIn({
   }
 
   return (
-    <div>
-      <div className="rounded-lg border border-line bg-surface p-5">
-        <p className="text-sm text-mute">You're timed in</p>
-        <p className="mt-1 text-lg font-semibold">{fmtDateTime(entry.start_at)}</p>
-        <p className="font-mono text-mute">Meter reading {fmtKwh(entry.start_reading)}</p>
-      </div>
+    <div className="grid gap-7">
+      <section className="rounded-lg bg-soft px-5 py-4">
+        <p className="text-[15px] text-mute">You're timed in</p>
+        <p className="mt-0.5 text-xl font-bold">Since {fmtDateTime(entry.start_at)}</p>
+        <p className="mt-0.5 text-[15px] tabular-nums text-mute">Meter reading {fmtKwh(entry.start_reading)} kWh</p>
+      </section>
 
-      <h2 className="mt-8 text-xl font-semibold">Time out</h2>
-      <p className="mt-1 text-mute">Enter the time you left and the reading on the meter.</p>
+      <section>
+        <Heading>Time out</Heading>
+        <Hint className="mt-1">Enter when you left and the reading on the meter.</Hint>
 
-      <form onSubmit={submit} className="mt-4 grid gap-5 rounded-lg border border-line bg-surface p-5 sm:p-6">
-        <div className="grid gap-5 sm:grid-cols-3">
-          <DateTimeFields idPrefix="time_out" value={time} onChange={setTime} />
+        <form onSubmit={submit} className="mt-4 grid gap-4">
+          <div className="grid grid-cols-2 gap-3">
+            <DateTimeFields idPrefix="time_out" value={time} onChange={setTime} />
+          </div>
           <ReadingField id="reading_out" value={reading} onChange={setReading} />
-        </div>
 
-        <div className="rounded-md bg-paper p-4" aria-live="polite">
-          {meterMoved === null ? (
-            <p className="text-mute">Enter the reading to see your usage and bill.</p>
-          ) : meterMoved < 0 ? (
-            <p className="font-medium text-signal">That's lower than your reading when you came in.</p>
-          ) : preview ? (
-            <div>
-              <div className="flex flex-wrap items-baseline gap-x-8 gap-y-1">
-                <p>
-                  <span className="text-sm text-mute">Your usage </span>
-                  <span className="font-mono text-2xl font-medium">{fmtKwh(preview.share)} kWh</span>
-                </p>
-                <p>
-                  <span className="text-sm text-mute">Your bill </span>
-                  <span className="font-mono text-2xl font-medium">{fmtPhp(round2(preview.share * settings.rate))}</span>
-                </p>
+          <div aria-live="polite">
+            {meterMoved === null ? (
+              <Hint>Enter the reading to see your usage and bill.</Hint>
+            ) : meterMoved < 0 ? (
+              <ErrorText>That's lower than your reading when you came in.</ErrorText>
+            ) : preview ? (
+              <div className="rounded-lg bg-soft p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[15px] text-mute">Your usage</p>
+                    <p className="text-[22px] font-bold tabular-nums">{fmtKwh(preview.share)} kWh</p>
+                  </div>
+                  <div>
+                    <p className="text-[15px] text-mute">Your bill</p>
+                    <p className="text-[22px] font-bold tabular-nums">{fmtPhp(round2(preview.share * settings.rate))}</p>
+                  </div>
+                </div>
+                {preview.sharedWith.length > 0 && (
+                  <Hint className="mt-3">
+                    Shared with {joinNames(preview.sharedWith)} for the time you were in the room together.
+                  </Hint>
+                )}
+                {preview.inconsistent && (
+                  <p className="mt-3 text-[15px] font-medium text-danger">
+                    This reading doesn't line up with another reading at that time. Double-check the numbers.
+                  </p>
+                )}
               </div>
-              {preview.sharedWith.length > 0 && (
-                <p className="mt-2 text-sm text-mute">
-                  Shared with {joinNames(preview.sharedWith)} for the time you were in the room together.
-                </p>
-              )}
-              {preview.inconsistent && (
-                <p className="mt-2 text-sm font-medium text-signal">
-                  This reading doesn't line up with another reading at that time. Double-check the numbers.
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-mute">Enter the time and reading to see your usage and bill.</p>
-          )}
-        </div>
+            ) : (
+              <Hint>Enter the time and reading to see your usage and bill.</Hint>
+            )}
+          </div>
 
-        {error && (
-          <p role="alert" className="text-sm font-medium text-signal">
-            {error}
-          </p>
-        )}
-        <div>
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-md bg-panel px-5 py-2.5 font-medium text-white transition-colors hover:bg-ink disabled:opacity-60"
-          >
+          {error && <ErrorText>{error}</ErrorText>}
+          <button type="submit" disabled={pending} className={primaryButton}>
             {pending ? "Saving…" : "Save time out"}
           </button>
-        </div>
-      </form>
+        </form>
 
-      <button
-        type="button"
-        onClick={() => {
-          if (confirm("Cancel this time in? It will be removed.")) actions.cancelTimeIn(entry.id);
-        }}
-        className="mt-4 text-sm font-medium text-signal underline underline-offset-4"
-      >
-        Cancel this time in
-      </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (confirm("Cancel this time in? It will be removed.")) actions.cancelTimeIn(entry.id);
+          }}
+          className="mx-auto mt-4 block px-3 py-2 text-base text-danger underline underline-offset-2"
+        >
+          Cancel this time in
+        </button>
+      </section>
     </div>
   );
 }

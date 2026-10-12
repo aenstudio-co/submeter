@@ -51,3 +51,43 @@ export async function getSession(): Promise<Person | null> {
     return null;
   }
 }
+
+// ---------- Admin unlock for the billing settings (lasts 30 minutes) ----------
+
+const ADMIN_COOKIE = "submeter_admin";
+const ADMIN_MAX_AGE = 60 * 30;
+
+export async function createAdminSession() {
+  const payload = Buffer.from(JSON.stringify({ admin: true, exp: Date.now() + ADMIN_MAX_AGE * 1000 })).toString("base64url");
+  const jar = await cookies();
+  jar.set(ADMIN_COOKIE, `${payload}.${sign(payload)}`, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: ADMIN_MAX_AGE,
+  });
+}
+
+export async function destroyAdminSession() {
+  (await cookies()).delete(ADMIN_COOKIE);
+}
+
+export async function hasAdminSession(): Promise<boolean> {
+  const raw = (await cookies()).get(ADMIN_COOKIE)?.value;
+  if (!raw) return false;
+
+  const [payload, sig] = raw.split(".");
+  if (!payload || !sig) return false;
+
+  const a = Buffer.from(sig);
+  const b = Buffer.from(sign(payload));
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
+
+  try {
+    const { admin, exp } = JSON.parse(Buffer.from(payload, "base64url").toString());
+    return admin === true && typeof exp === "number" && exp > Date.now();
+  } catch {
+    return false;
+  }
+}
