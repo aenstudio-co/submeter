@@ -54,7 +54,7 @@ export default function MeterApp({
       <div className="mx-auto max-w-md">
         <header className="flex items-start justify-between gap-3 px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold leading-tight">Room sub meter</h1>
+            <h1 className="text-xl font-bold leading-tight">Submeter Reading</h1>
             <LiveClock />
           </div>
           <div className="shrink-0 text-right">

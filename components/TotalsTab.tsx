@@ -88,60 +88,50 @@ export default function TotalsTab({ sum, settings }: { sum: Summary; settings: S
         )}
       </section>
 
-      <details className="group rounded-lg border border-line">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
-          <span className="text-[17px] font-bold">How it's split</span>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            className="shrink-0 transition-transform group-open:rotate-180"
-          >
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </summary>
+      <section>
+        <Heading>How it's split</Heading>
+        <Hint className="mt-1">
+          Each row is the time between two meter readings. The kWh used in that time is split equally between the
+          people in the room.
+        </Hint>
 
-        <div className="border-t border-line">
-          <p className="px-4 pb-1 pt-3 text-[15px] text-mute">
-            The kWh used between two meter readings is split equally between the people in the room.
-          </p>
-
-          {sum.segments.length === 0 ? (
-            <p className="px-4 pb-4 pt-2 text-mute">No readings yet.</p>
-          ) : (
-            <ul className="mt-2 divide-y divide-line border-t border-line">
-              {sum.segments.map((g, i) => {
-                const n = g.people.length;
-                return (
-                  <li key={i} className="flex items-start justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className={g.problem ? "font-bold text-danger" : n === 0 ? "text-mute" : "font-bold"}>
-                        {g.problem ? "Check readings" : n === 0 ? "Nobody logged" : joinNames(g.people)}
-                      </p>
-                      <p className="text-[15px] text-mute">
-                        {g.fromCycleStart ? `${fmtDate(settings.cycle_start)} (start)` : fmtDateTime(g.fromAt)} to{" "}
-                        {fmtDateTime(g.toAt)}
-                      </p>
-                    </div>
-                    <div className="shrink-0 whitespace-nowrap text-right">
-                      <p className={`tabular-nums ${n === 0 ? "text-mute" : "font-bold"}`}>{fmtKwh(g.kwh)} kWh</p>
-                      {n > 1 && !g.problem && (
-                        <p className="text-[15px] tabular-nums text-mute">{fmtKwh(round2(g.kwh / n))} each</p>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </details>
+        {sum.segments.length === 0 ? (
+          <p className="mt-4 rounded-lg border border-line p-4 text-mute">No readings yet.</p>
+        ) : (
+          <ul className="mt-4 grid gap-2.5">
+            {sum.segments.map((g, i) => {
+              const n = g.people.length;
+              return (
+                <li
+                  key={i}
+                  className={`flex items-start justify-between gap-3 rounded-lg border p-3.5 ${
+                    g.problem ? "border-danger" : "border-line"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <p className={g.problem ? "font-bold text-danger" : n === 0 ? "text-mute" : "font-bold"}>
+                      {g.problem ? "Check readings" : n === 0 ? "Nobody logged" : joinNames(g.people)}
+                    </p>
+                    <p className="mt-0.5 text-[15px] text-mute">
+                      {g.fromCycleStart ? `${fmtDate(settings.cycle_start)} (start)` : fmtDateTime(g.fromAt)} to{" "}
+                      {fmtDateTime(g.toAt)}
+                    </p>
+                    <p className="text-[15px] tabular-nums text-mute">
+                      Meter {fmtKwh(g.fromReading)} to {fmtKwh(g.toReading)}
+                    </p>
+                  </div>
+                  <div className="shrink-0 whitespace-nowrap text-right">
+                    <p className="font-bold tabular-nums">{fmtKwh(g.kwh)} kWh</p>
+                    {n > 1 && !g.problem && (
+                      <p className="mt-0.5 text-[15px] tabular-nums text-mute">{fmtKwh(round2(g.kwh / n))} kWh each</p>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
