@@ -13,9 +13,9 @@ import TotalsTab from "./TotalsTab";
 
 type Tab = "session" | "calendar" | "totals" | "history";
 const TABS: { id: Tab; label: string }[] = [
-  { id: "session", label: "My session" },
+  { id: "session", label: "My Session" },
   { id: "calendar", label: "Calendar" },
-  { id: "totals", label: "Totals" },
+  { id: "totals", label: "Total" },
   { id: "history", label: "History" },
 ];
 

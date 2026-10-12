@@ -60,7 +60,7 @@ export default function TotalsTab({ sum, settings }: { sum: Summary; settings: S
             </tbody>
             <tfoot>
               <tr className="bg-soft font-bold">
-                <td className="border-t-2 border-ink px-3 py-3 align-top">Total on the meter</td>
+                <td className="border-t-2 border-ink px-3 py-3 align-top">Total</td>
                 <td className={`${num} border-t-2 border-ink`}>{fmtKwh(sum.total)} kWh</td>
                 <td className={`${num} border-t-2 border-ink`}>{fmtPhp(sum.totalBill)}</td>
               </tr>

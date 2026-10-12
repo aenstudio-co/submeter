@@ -167,9 +167,9 @@ export default function Calendar({
           })}
         </div>
 
-        <div className="mt-2 flex justify-center">
-          <button type="button" onClick={goToday} className="px-3 py-2 text-[15px] underline underline-offset-2">
-            Go to today
+        <div className="mt-2 flex justify-start">
+          <button type="button" onClick={goToday} className="py-2 text-[15px] underline underline-offset-2">
+            Go to Today
           </button>
         </div>
 
